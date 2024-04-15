@@ -1,108 +1,156 @@
 <template>
-  <v-data-table :headers="headers" :items="users">
-    <template v-slot:top>
-      <v-toolbar flat>
-        <v-toolbar-title>CADASTRO</v-toolbar-title>
-        <v-divider class="mx-4" inset vertical></v-divider>
-        <v-spacer></v-spacer>
-        <v-dialog v-model="dialog" max-width="500px">
-          <template v-slot:activator="{ props }">
-            <v-btn class="mb-2" color="primary" dark v-bind="props">
-              New Item
+  <div class="text-center py-4   w-75 mx-auto">
+    <v-data-table :headers="headers" :items="users">
+      <template v-slot:top>
+        <v-toolbar flat>
+          <v-toolbar-title>CADASTRO</v-toolbar-title>
+          <v-divider class="mx-4" inset vertical></v-divider>
+          <v-spacer></v-spacer>
+          <template v-slot:append>
+            <v-btn class="mb-2" color="primary" dark @click="openDialog()">
+              Novo item
             </v-btn>
           </template>
-          <v-card>
-            <v-card-title>
-              <span class="text-h5">{{ formTitle }}</span>
-            </v-card-title>
-
-            <v-card-text>
-              <v-container>
-                <v-row>
-                  <v-col cols="12" md="4" sm="6">
-                    <v-text-field v-model="editedItem.name" label="Dessert name"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="4" sm="6">
-                    <v-text-field v-model="editedItem.calories" label="Calories"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="4" sm="6">
-                    <v-text-field v-model="editedItem.fat" label="Fat (g)"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="4" sm="6">
-                    <v-text-field v-model="editedItem.carbs" label="Carbs (g)"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="4" sm="6">
-                    <v-text-field v-model="editedItem.protein" label="Protein (g)"></v-text-field>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </v-card-text>
-
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn color="blue-darken-1" variant="text" @click="close">
-                Cancel
-              </v-btn>
-              <v-btn color="blue-darken-1" variant="text" @click="save">
-                Save
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-        <v-dialog v-model="dialogDelete" max-width="500px">
-          <v-card>
-            <v-card-title class="text-h5">Are you sure you want to delete this item?</v-card-title>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn color="blue-darken-1" variant="text" @click="closeDelete">Cancel</v-btn>
-              <v-btn color="blue-darken-1" variant="text" @click="deleteItemConfirm">OK</v-btn>
-              <v-spacer></v-spacer>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-      </v-toolbar>
-    </template>
-    <template v-slot:item.actions="{ item }">
-      <v-icon class="me-2" size="small" @click="editItem(item)">
-        mdi-pencil
-      </v-icon>
-      <v-icon size="small" @click="deleteItem(item)">
-        mdi-delete
-      </v-icon>
-    </template>
-    <template v-slot:no-data>
-      <v-btn color="primary" @click="initialize">
-        Reset
-      </v-btn>
-    </template>
-  </v-data-table>
+          <div class="text-center pa-4">
+            <v-dialog v-model="dialog" width="auto">
+              <v-card width="400">
+                <v-card-title>{{ tempID ? 'Editar Usuario' : 'Criar Usuario' }}</v-card-title>
+                <v-card-text>
+                  <v-text-field v-model="tempNome" :rules="rules" label="Nome"></v-text-field>
+                  <v-text-field v-model="tempEmail" :rules="rulesEmail" label="Email"></v-text-field>
+                  <v-text-field v-model="tempID" label="ID" disabled></v-text-field>
+                </v-card-text>
+                <template v-slot:actions>
+                  <v-btn class="ms-auto" @click="closeDialog()">Cancelar</v-btn>
+                    <v-btn @click="tempID ? editUser() : createUser()" :disabled="disableNovoUser">{{ tempID ? 'Editar' : 'Criar' }}</v-btn>
+                </template>
+              </v-card>
+            </v-dialog>
+          </div>
+        </v-toolbar>
+      </template>
+      <template v-slot:item.actions="{ item }">
+        <v-icon class="me-2" size="small" @click="editDialog(item)">
+          mdi-pencil
+        </v-icon>
+        <v-icon size="small" @click="deleteUser(item)">
+          mdi-delete
+        </v-icon>
+      </template>
+    </v-data-table>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 const urlApi = 'http://localhost:3333/users'
+
 const users = ref([])
+const tempNome = ref('')
+const tempEmail = ref('')
+const tempID = ref('')
+const rules = [
+  (v) => !!v || 'Campo obrigatório',
+  (v) => v && v.length >= 3 || 'Nome muito curto',
+]
+const rulesEmail = [
+  (v) => !!v || 'Campo obrigatório',
+  (v) => v && v.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g) || 'Email inválido',
+]
 
 const dialog = ref(false)
-const dialogDelete = ref(false)
+
+const disableNovoUser = computed(() => {
+  return !tempNome.value || !tempEmail.value || tempNome.value.length < 3 || !tempEmail.value.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g);
+})
+
 const headers = [
   {
     title: 'Nome',
     align: 'start',
-    sortable: false,
+    sortable: true,
     key: 'name',
   },
   { title: 'Email', key: 'email' },
   { title: 'ID', key: 'id' },
+  { title: 'Actions', key: 'actions', sortable: false },
 ]
 
-fetch(urlApi, {
-  method: 'GET'
-})
-  .then(response => response.json())
-  .then(data => {
-    console.log(data)
-    users.value = data
+const closeDialog = () => {
+  dialog.value = false
+  //tempNome.value = ''
+  //tempEmail.value = ''
+  //tempID.value = ''
+}
+const openDialog = () => {
+  tempEmail.value = ''
+  tempNome.value = ''
+  tempID.value = ''
+  dialog.value = true
+}
+const editDialog = (item) => {
+  tempNome.value = item.name
+  tempEmail.value = item.email
+  tempID.value = item.id
+  dialog.value = true
+}
+
+const carregarUsuarios = () => {
+  fetch(urlApi, {
+    method: 'GET'
   })
-  .catch(error => console.error(error))
+    .then(response => response.json())
+    .then(data => {
+      //console.log(data)
+      users.value = data
+    })
+    .catch(error => console.error(error));
+}
+carregarUsuarios()
+
+const deleteUser = (item) => {
+  fetch(`${urlApi}/${item.id}`, {
+    method: 'DELETE'
+  })
+    .then(() => {
+      carregarUsuarios()
+    })
+    .catch(error => console.error(error));
+}
+
+const createUser = () => {
+  fetch(urlApi, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: tempNome.value,
+      email: tempEmail.value
+    })
+  })
+    .then(() => {
+      carregarUsuarios()
+      closeDialog()
+    })
+    .catch(error => console.error(error));
+}
+
+const editUser = () => {
+  fetch(`${urlApi}/${tempID.value}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: tempNome.value,
+      email: tempEmail.value
+    })
+  })
+    .then(() => {
+      carregarUsuarios()
+      closeDialog()
+    })
+    .catch(error => console.error(error));
+}
 </script>
