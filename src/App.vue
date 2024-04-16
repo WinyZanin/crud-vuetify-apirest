@@ -1,15 +1,17 @@
 <template>
   <div class="py-4 w-75 mx-auto">
     <!--tabela-->
-    <v-data-table  :headers="headers" :items="users">
+    <v-data-table :headers="headers" :items="users" :search="search">
       <template v-slot:top>
         <v-toolbar flat>
           <v-toolbar-title>CADASTRO</v-toolbar-title>
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
+          <!--campo de busca-->
+          <v-text-field v-model="search"label="Pesquisa" prepend-inner-icon="mdi-magnify" variant="solo" hide-details
+            single-line clearable density="comfortable" ></v-text-field>
           <template v-slot:append>
             <!--botão novo usuario/editar-->
-            <v-btn prepend-icon="mdi-account-plus" class="mb-2" variant="elevated" color="primary" dark @click="openDialog()">
+            <v-btn prepend-icon="mdi-account-plus" class="mb-2" variant="elevated" color="primary" dark
+              @click="openDialog()">
               Novo Usuario
             </v-btn>
           </template>
@@ -26,7 +28,8 @@
                 <template v-slot:actions>
                   <!--se ID estiver preenchido a função do botão sera de criar usuario-->
                   <v-btn class="ms-auto" @click="closeDialog()">Cancelar</v-btn>
-                    <v-btn @click="tempID ? editUser() : createUser()" :disabled="disableNovoUser">{{ tempID ? 'Editar' : 'Criar' }}</v-btn>
+                  <v-btn @click="tempID ? editUser() : createUser()" :disabled="disableNovoUser">{{ tempID ? 'Editar' :
+      'Criar' }}</v-btn>
                 </template>
               </v-card>
             </v-dialog>
@@ -47,7 +50,7 @@
 </template>
 
 <script setup>
-import { ref, computed} from 'vue'
+import { ref, computed } from 'vue'
 
 // URL da API
 const urlApi = 'http://localhost:3333/users'
@@ -57,6 +60,7 @@ const users = ref([])
 const tempNome = ref('')
 const tempEmail = ref('')
 const tempID = ref('')
+const search = ref('')
 
 // Regras de validação
 const rules = [
