@@ -1,17 +1,20 @@
 <template>
-  <div class="text-center py-4   w-75 mx-auto">
-    <v-data-table :headers="headers" :items="users">
+  <div class="py-4 w-75 mx-auto">
+    <!--tabela-->
+    <v-data-table  :headers="headers" :items="users">
       <template v-slot:top>
         <v-toolbar flat>
           <v-toolbar-title>CADASTRO</v-toolbar-title>
           <v-divider class="mx-4" inset vertical></v-divider>
           <v-spacer></v-spacer>
           <template v-slot:append>
-            <v-btn class="mb-2" color="primary" dark @click="openDialog()">
-              Novo item
+            <!--botão novo usuario/editar-->
+            <v-btn prepend-icon="mdi-account-plus" class="mb-2" variant="elevated" color="primary" dark @click="openDialog()">
+              Novo Usuario
             </v-btn>
           </template>
           <div class="text-center pa-4">
+            <!--dialog criação/edição-->
             <v-dialog v-model="dialog" width="auto">
               <v-card width="400">
                 <v-card-title>{{ tempID ? 'Editar Usuario' : 'Criar Usuario' }}</v-card-title>
@@ -21,6 +24,7 @@
                   <v-text-field v-model="tempID" label="ID" disabled></v-text-field>
                 </v-card-text>
                 <template v-slot:actions>
+                  <!--se ID estiver preenchido a função do botão sera de criar usuario-->
                   <v-btn class="ms-auto" @click="closeDialog()">Cancelar</v-btn>
                     <v-btn @click="tempID ? editUser() : createUser()" :disabled="disableNovoUser">{{ tempID ? 'Editar' : 'Criar' }}</v-btn>
                 </template>
@@ -29,11 +33,12 @@
           </div>
         </v-toolbar>
       </template>
+      <!--botões de editar e apagar-->
       <template v-slot:item.actions="{ item }">
-        <v-icon class="me-2" size="small" @click="editDialog(item)">
+        <v-icon class="me-2" size="small" @click="editDialog(item)" color="blue">
           mdi-pencil
         </v-icon>
-        <v-icon size="small" @click="deleteUser(item)">
+        <v-icon size="small" @click="deleteUser(item)" color="red">
           mdi-delete
         </v-icon>
       </template>
@@ -42,13 +47,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed} from 'vue'
+
+// URL da API
 const urlApi = 'http://localhost:3333/users'
 
+// Variáveis
 const users = ref([])
 const tempNome = ref('')
 const tempEmail = ref('')
 const tempID = ref('')
+
+// Regras de validação
 const rules = [
   (v) => !!v || 'Campo obrigatório',
   (v) => v && v.length >= 3 || 'Nome muito curto',
@@ -58,12 +68,7 @@ const rulesEmail = [
   (v) => v && v.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g) || 'Email inválido',
 ]
 
-const dialog = ref(false)
-
-const disableNovoUser = computed(() => {
-  return !tempNome.value || !tempEmail.value || tempNome.value.length < 3 || !tempEmail.value.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g);
-})
-
+// Headers da tabela
 const headers = [
   {
     title: 'Nome',
@@ -76,6 +81,13 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false },
 ]
 
+// variaveis do dialog
+const dialog = ref(false)
+const disableNovoUser = computed(() => {
+  return !tempNome.value || !tempEmail.value || tempNome.value.length < 3 || !tempEmail.value.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g);
+})
+
+// Funções do dialog
 const closeDialog = () => {
   dialog.value = false
   //tempNome.value = ''
@@ -88,6 +100,8 @@ const openDialog = () => {
   tempID.value = ''
   dialog.value = true
 }
+
+// carrega usuario para edição
 const editDialog = (item) => {
   tempNome.value = item.name
   tempEmail.value = item.email
@@ -95,6 +109,8 @@ const editDialog = (item) => {
   dialog.value = true
 }
 
+// Funções da API
+// Carregar usuários
 const carregarUsuarios = () => {
   fetch(urlApi, {
     method: 'GET'
@@ -108,6 +124,7 @@ const carregarUsuarios = () => {
 }
 carregarUsuarios()
 
+// Deletar usuário
 const deleteUser = (item) => {
   fetch(`${urlApi}/${item.id}`, {
     method: 'DELETE'
@@ -118,6 +135,7 @@ const deleteUser = (item) => {
     .catch(error => console.error(error));
 }
 
+// Criar usuário
 const createUser = () => {
   fetch(urlApi, {
     method: 'POST',
@@ -136,6 +154,7 @@ const createUser = () => {
     .catch(error => console.error(error));
 }
 
+// Editar usuário
 const editUser = () => {
   fetch(`${urlApi}/${tempID.value}`, {
     method: 'PUT',
